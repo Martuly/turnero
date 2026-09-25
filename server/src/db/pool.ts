@@ -3,6 +3,8 @@ import { config } from '../config/env.js';
 
 export type { PoolClient };
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const pool = new Pool({
   host: config.DB_HOST,
   port: config.DB_PORT,
