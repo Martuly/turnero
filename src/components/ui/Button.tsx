@@ -12,7 +12,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 shadow-sm',
+  primary: 'bg-[#6652e8] text-white hover:bg-[#5540d5] active:bg-[#4934c8] shadow-sm shadow-indigo-200',
   secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 active:bg-slate-300',
   outline: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400',
   ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
@@ -28,7 +28,7 @@ const sizes: Record<Size, string> = {
 export function Button({ variant = 'primary', size = 'md', loading, disabled, children, className = '', ...rest }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-xl font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#998af3] focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled || loading}
       {...rest}
     >

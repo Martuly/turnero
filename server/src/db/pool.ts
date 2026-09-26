@@ -11,9 +11,7 @@ export const pool = new Pool({
   database: config.DB_NAME,
   user: config.DB_USER,
   password: config.DB_PASSWORD,
-  ssl: isProduction
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: false,
 });
 
 pool.on('error', (err) => {

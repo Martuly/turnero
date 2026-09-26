@@ -1,7 +1,7 @@
 import { type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes, forwardRef } from 'react';
 
 const baseField =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 disabled:bg-slate-50 disabled:text-slate-500';
+  'w-full rounded-xl border border-[#e2e1ee] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-[#6652e8] focus:outline-none focus:ring-1 focus:ring-[#6652e8] disabled:bg-slate-50 disabled:text-slate-500';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;

@@ -34,11 +34,11 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-[#f2efff] via-[#fbfaff] to-[#eafaf7] flex flex-col">
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
           <Link to="/reservar" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-slate-900 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-xl bg-[#6652e8] flex items-center justify-center">
               <CalendarDays className="h-5 w-5 text-white" />
             </div>
             <span className="text-lg font-semibold text-slate-900">{APP_CONFIG.name}</span>
@@ -51,13 +51,13 @@ export function LoginPage() {
 
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm">
-          <div className="rounded-2xl bg-white border border-slate-200 p-8">
+          <div className="rounded-3xl bg-white border border-[#ece9f8] p-8 shadow-xl shadow-indigo-100/50">
             <div className="mb-6 text-center">
-              <div className="mx-auto h-12 w-12 rounded-xl bg-slate-900 flex items-center justify-center mb-4">
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-[#6652e8] flex items-center justify-center mb-4">
                 <Lock className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-xl font-semibold text-slate-900">Panel administrativo</h1>
-              <p className="text-sm text-slate-500 mt-1">Iniciá sesión para continuar</p>
+              <h1 className="text-2xl font-bold text-[#242044]">Bienvenida a TuTurno</h1>
+              <p className="text-sm text-slate-500 mt-1">Ingresá para organizar tu agenda</p>
             </div>
 
             {error && (
@@ -95,7 +95,7 @@ export function LoginPage() {
             </form>
           </div>
           <p className="text-center text-xs text-slate-400 mt-4">
-            Demo: admin@demo.com / admin123
+            Tu agenda, simple.
           </p>
         </div>
       </main>

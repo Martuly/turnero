@@ -7,7 +7,7 @@ import { auth } from '@/api/auth';
 import { useNavigate } from 'react-router-dom';
 
 const navItems = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin', label: 'Inicio', icon: LayoutDashboard, end: true },
   { to: '/admin/agenda', label: 'Agenda', icon: CalendarRange, end: false },
   { to: '/admin/turnos', label: 'Turnos', icon: ListTodo, end: false },
   { to: '/admin/servicios', label: 'Servicios', icon: Briefcase, end: false },
@@ -26,15 +26,15 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-[#f7f8fc] flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-30 hidden md:flex">
+      <aside className="w-64 bg-white border-r border-[#ececf4] flex flex-col fixed inset-y-0 left-0 z-30 hidden md:flex">
         <div className="px-5 py-5 border-b border-slate-100">
           <Link to="/admin" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-xl bg-[#6652e8] shadow-md shadow-indigo-200 flex items-center justify-center">
               <CalendarDays className="h-4.5 w-4.5 text-white" />
             </div>
-            <span className="font-semibold text-slate-900">{APP_CONFIG.name}</span>
+            <span className="font-bold tracking-tight text-[#242044]">{APP_CONFIG.name}</span>
           </Link>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -44,8 +44,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
-                ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`
+                `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors
+                ${isActive ? 'bg-[#eeeaff] text-[#5842d5]' : 'text-[#69677e] hover:bg-[#f5f2ff] hover:text-[#5842d5]'}`
               }
             >
               <item.icon className="h-4.5 w-4.5" />
@@ -56,7 +56,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         <div className="px-3 py-4 border-t border-slate-100 space-y-1">
           <Link
             to="/reservar"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#69677e] hover:bg-[#f5f2ff] hover:text-[#5842d5] transition-colors"
           >
             <ExternalLink className="h-4.5 w-4.5" />
             Página de reserva
@@ -80,7 +80,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           )}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors w-full"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors w-full"
           >
             <LogOut className="h-4.5 w-4.5" />
             Cerrar sesión
@@ -92,10 +92,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <div className="md:hidden fixed top-0 inset-x-0 z-30 bg-white border-b border-slate-200">
         <div className="flex items-center justify-between px-4 py-3">
           <Link to="/admin" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-xl bg-[#6652e8] shadow-md shadow-indigo-200 flex items-center justify-center">
               <CalendarDays className="h-4 w-4 text-white" />
             </div>
-            <span className="font-semibold text-slate-900">{APP_CONFIG.name}</span>
+            <span className="font-bold tracking-tight text-[#242044]">{APP_CONFIG.name}</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/reservar" className="text-sm text-slate-500">Reservar</Link>
@@ -112,7 +112,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               end={item.end}
               className={({ isActive }) =>
                 `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors
-                ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`
+                ${isActive ? 'bg-[#eeeaff] text-[#5842d5]' : 'text-slate-600 hover:bg-slate-100'}`
               }
             >
               <item.icon className="h-3.5 w-3.5" />
@@ -124,7 +124,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <main className="flex-1 md:ml-64 pt-28 md:pt-0">
-        <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">{children}</div>
+        <div className="px-5 sm:px-8 lg:px-10 py-8 max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
   );
@@ -134,8 +134,8 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
+        <h1 className="text-3xl font-bold tracking-tight text-[#242044]">{title}</h1>
+        {subtitle && <p className="text-sm text-[#77758c] mt-1">{subtitle}</p>}
       </div>
       {action}
     </div>
