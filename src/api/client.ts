@@ -6,6 +6,7 @@ import type {
   CrearTurnoPayload,
   CrearTurnoResponse,
   DashboardResumen,
+  DashboardEstadisticas,
   Disponibilidad,
   DisponibilidadResponse,
   EstadoTurno,
@@ -397,6 +398,33 @@ export const api = {
   async getDashboardResumen(): Promise<DashboardResumen> {
     if (MODE === 'mock') return mockDashboardResumen();
     return realFetch<DashboardResumen>(`/dashboard/resumen`);
+  },
+
+  async getDashboardEstadisticas(desde: string, hasta: string, idProfesional?: number): Promise<DashboardEstadisticas> {
+    if (MODE === 'mock') {
+      const rows = mockTurnos.filter((t) => t.fecha >= desde && t.fecha <= hasta &&
+        (idProfesional == null || t.id_profesional === idProfesional));
+      const estados: DashboardEstadisticas['estados'] = { PENDIENTE: 0, CONFIRMADO: 0, CANCELADO: 0, FINALIZADO: 0, AUSENTE: 0 };
+      const dias = new Map<string, number>();
+      const servicios = new Map<string, number>();
+      const horas = new Map<number, number>();
+      for (const t of rows) {
+        estados[t.estado]++;
+        if (t.estado === 'CANCELADO') continue;
+        dias.set(t.fecha, (dias.get(t.fecha) ?? 0) + 1);
+        const servicio = t.servicio_nombre ?? 'Sin nombre';
+        servicios.set(servicio, (servicios.get(servicio) ?? 0) + 1);
+        const hora = Number(t.hora_inicio.slice(0, 2));
+        horas.set(hora, (horas.get(hora) ?? 0) + 1);
+      }
+      return { desde, hasta, total: rows.length, estados,
+        por_dia: [...dias].map(([fecha, cantidad]) => ({ fecha, cantidad })).sort((a, b) => a.fecha.localeCompare(b.fecha)),
+        por_servicio: [...servicios].map(([nombre, cantidad]) => ({ nombre, cantidad })).sort((a, b) => b.cantidad - a.cantidad).slice(0, 5),
+        por_hora: [...horas].map(([hora, cantidad]) => ({ hora, cantidad })).sort((a, b) => a.hora - b.hora) };
+    }
+    const q = new URLSearchParams({ desde, hasta });
+    if (idProfesional != null) q.set('idProfesional', String(idProfesional));
+    return realFetch<DashboardEstadisticas>(`/dashboard/estadisticas?${q}`);
   },
 
   // Auth

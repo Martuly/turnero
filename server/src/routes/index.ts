@@ -182,6 +182,9 @@ router.get(
   dashboardController.resumen,
 );
 
-
+router.get(
+  '/dashboard/estadisticas',
+  dashboardController.estadisticas,
+);
 
 export default router;
