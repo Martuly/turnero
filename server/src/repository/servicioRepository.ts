@@ -2,7 +2,9 @@ import { query, queryOne } from '../db/pool.js';
 import type { ServicioRow } from '../types.js';
 
 export const servicioRepository = {
-  async findAll(idOrganizacion: number): Promise<ServicioRow[]> {
+  async findAll(
+    idOrganizacion: number,
+  ): Promise<ServicioRow[]> {
     return query<ServicioRow>(
       `SELECT *
        FROM servicio
@@ -12,7 +14,9 @@ export const servicioRepository = {
     );
   },
 
-  async findAllActive(idOrganizacion: number): Promise<ServicioRow[]> {
+  async findAllActive(
+    idOrganizacion: number,
+  ): Promise<ServicioRow[]> {
     return query<ServicioRow>(
       `SELECT *
        FROM servicio
@@ -32,7 +36,10 @@ export const servicioRepository = {
        FROM servicio
        WHERE id_servicio = $1
          AND id_organizacion = $2`,
-      [id, idOrganizacion],
+      [
+        id,
+        idOrganizacion,
+      ],
     );
   },
 
@@ -44,29 +51,39 @@ export const servicioRepository = {
     precio: number;
     activo: boolean;
   }): Promise<ServicioRow> {
-    const row = await queryOne<ServicioRow>(
-      `INSERT INTO servicio (
-        id_organizacion,
-        nombre,
-        descripcion,
-        duracion_minutos,
-        precio,
-        activo
-      )
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *`,
-      [
-        data.id_organizacion,
-        data.nombre,
-        data.descripcion,
-        data.duracion_minutos,
-        data.precio,
-        data.activo,
-      ],
-    );
+    const row =
+      await queryOne<ServicioRow>(
+        `INSERT INTO servicio (
+          id_organizacion,
+          nombre,
+          descripcion,
+          duracion_minutos,
+          precio,
+          activo
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6
+        )
+        RETURNING *`,
+        [
+          data.id_organizacion,
+          data.nombre,
+          data.descripcion,
+          data.duracion_minutos,
+          data.precio,
+          data.activo,
+        ],
+      );
 
     if (!row) {
-      throw new Error('Error al crear servicio');
+      throw new Error(
+        'Error al crear servicio',
+      );
     }
 
     return row;
@@ -83,7 +100,11 @@ export const servicioRepository = {
       activo?: boolean;
     },
   ): Promise<ServicioRow | null> {
-    const existing = await this.findById(id, idOrganizacion);
+    const existing =
+      await this.findById(
+        id,
+        idOrganizacion,
+      );
 
     if (!existing) {
       return null;
@@ -91,20 +112,31 @@ export const servicioRepository = {
 
     return queryOne<ServicioRow>(
       `UPDATE servicio
-       SET nombre = $1,
-           descripcion = $2,
-           duracion_minutos = $3,
-           precio = $4,
-           activo = $5
+       SET
+         nombre = $1,
+         descripcion = $2,
+         duracion_minutos = $3,
+         precio = $4,
+         activo = $5
        WHERE id_servicio = $6
          AND id_organizacion = $7
        RETURNING *`,
       [
-        data.nombre ?? existing.nombre,
-        data.descripcion ?? existing.descripcion,
-        data.duracion_minutos ?? existing.duracion_minutos,
-        data.precio ?? existing.precio,
-        data.activo ?? existing.activo,
+        data.nombre ??
+          existing.nombre,
+
+        data.descripcion ??
+          existing.descripcion,
+
+        data.duracion_minutos ??
+          existing.duracion_minutos,
+
+        data.precio ??
+          existing.precio,
+
+        data.activo ??
+          existing.activo,
+
         id,
         idOrganizacion,
       ],
@@ -112,17 +144,23 @@ export const servicioRepository = {
   },
 
   async delete(
-  id: number,
-  idOrganizacion: number,
+    id: number,
+    idOrganizacion: number,
   ): Promise<boolean> {
-    const row = await queryOne<{ id_servicio: number }>(
-      `UPDATE servicio
-      SET activo = false
-      WHERE id_servicio = $1
-        AND id_organizacion = $2
-      RETURNING id_servicio`,
-      [id, idOrganizacion],
-    );
+    const row =
+      await queryOne<{
+        id_servicio: number;
+      }>(
+        `UPDATE servicio
+         SET activo = false
+         WHERE id_servicio = $1
+           AND id_organizacion = $2
+         RETURNING id_servicio`,
+        [
+          id,
+          idOrganizacion,
+        ],
+      );
 
     return row !== null;
   },

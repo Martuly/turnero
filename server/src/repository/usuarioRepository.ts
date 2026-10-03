@@ -2,6 +2,7 @@ import { query, queryOne } from '../db/pool.js';
 
 export interface UsuarioRow {
   id_usuario: number;
+  keycloak_user_id: string | null;
   nombre: string;
   email: string;
   password_hash: string;
@@ -17,16 +18,43 @@ export interface UsuarioOrgRow {
 }
 
 export const usuarioRepository = {
-  async findByEmail(email: string): Promise<UsuarioRow | null> {
+  async findByEmail(
+    email: string,
+  ): Promise<UsuarioRow | null> {
     return queryOne<UsuarioRow>(
-      'SELECT * FROM usuario WHERE LOWER(email) = LOWER($1) AND activo = true',
+      `
+        SELECT *
+        FROM usuario
+        WHERE LOWER(email) = LOWER($1)
+          AND activo = true
+      `,
       [email],
     );
   },
 
-  async getOrganizaciones(idUsuario: number): Promise<UsuarioOrgRow[]> {
+  async findByKeycloakUserId(
+    keycloakUserId: string,
+  ): Promise<UsuarioRow | null> {
+    return queryOne<UsuarioRow>(
+      `
+        SELECT *
+        FROM usuario
+        WHERE keycloak_user_id = $1
+          AND activo = true
+      `,
+      [keycloakUserId],
+    );
+  },
+
+  async getOrganizaciones(
+    idUsuario: number,
+  ): Promise<UsuarioOrgRow[]> {
     return query<UsuarioOrgRow>(
-      'SELECT * FROM usuario_organizacion WHERE id_usuario = $1',
+      `
+        SELECT *
+        FROM usuario_organizacion
+        WHERE id_usuario = $1
+      `,
       [idUsuario],
     );
   },

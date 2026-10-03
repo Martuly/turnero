@@ -1,6 +1,6 @@
 // Central app configuration — change the system name here.
 export const APP_CONFIG = {
-  name: 'TuTurno',
+  name: 'clickturno',
   tagline: 'Tu agenda, simple.',
   // Slot interval (minutes) used to generate available times
   slotIntervalMinutes: 30,

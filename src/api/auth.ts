@@ -1,37 +1,79 @@
-// Auth token storage utilities
-const TOKEN_KEY = 'agendapro_token';
-const USER_KEY = 'agendapro_user';
+import keycloak from '../auth/keycloak';
 
 export interface AuthUser {
-  idUsuario: number;
+  idUsuario?: number;
   nombre: string;
   email: string;
-  rol: string;
-  idOrganizacion: number;
+  rol?: string;
+  idOrganizacion?: number;
+  username?: string;
 }
 
 export const auth = {
   getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return keycloak.token ?? null;
   },
+
   getUser(): AuthUser | null {
-    const raw = localStorage.getItem(USER_KEY);
-    if (!raw) return null;
+    const token = keycloak.tokenParsed;
+
+    if (!token) {
+      return null;
+    }
+
+    const realmAccess = token.realm_access as
+      | { roles?: string[] }
+      | undefined;
+
+    const roles = realmAccess?.roles ?? [];
+
+    const rol =
+      roles.includes('SUPER_ADMIN')
+        ? 'SUPER_ADMIN'
+        : roles.includes('ADMIN')
+          ? 'ADMIN'
+          : roles.includes('RECEPCION')
+            ? 'RECEPCION'
+            : roles.includes('PROFESIONAL')
+              ? 'PROFESIONAL'
+              : undefined;
+
+    return {
+      nombre:
+        typeof token.name === 'string'
+          ? token.name
+          : '',
+
+      email:
+        typeof token.email === 'string'
+          ? token.email
+          : '',
+
+      username:
+        typeof token.preferred_username === 'string'
+          ? token.preferred_username
+          : undefined,
+
+      rol,
+    };
+  },
+
+  async getValidToken(): Promise<string | null> {
     try {
-      return JSON.parse(raw) as AuthUser;
+      await keycloak.updateToken(30);
+      return keycloak.token ?? null;
     } catch {
       return null;
     }
   },
-  setSession(token: string, user: AuthUser): void {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-  },
+
   clear(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    void keycloak.logout({
+      redirectUri: window.location.origin,
+    });
   },
+
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return !!keycloak.authenticated;
   },
 };

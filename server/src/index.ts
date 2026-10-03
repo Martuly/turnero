@@ -34,7 +34,7 @@ async function start() {
   }
 
   app.listen(config.PORT, () => {
-    console.log(`[server] TuTurno API escuchando en http://localhost:${config.PORT}`);
+    console.log(`[server] clickturno API escuchando en http://localhost:${config.PORT}`);
   });
 }
 

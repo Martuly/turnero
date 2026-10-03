@@ -121,6 +121,34 @@ export interface DashboardResumen {
   total_clientes: number;
 }
 
+export interface DashboardEstadisticas {
+  desde: string;
+  hasta: string;
+  total: number;
+
+  estados: {
+    PENDIENTE: number;
+    CONFIRMADO: number;
+    CANCELADO: number;
+    FINALIZADO: number;
+    AUSENTE: number;
+  };
+
+  por_dia: {
+    fecha: string;
+    cantidad: number;
+  }[];
+
+  por_servicio: {
+    nombre: string;
+    cantidad: number;
+  }[];
+
+  por_hora: {
+    hora: number;
+    cantidad: number;
+  }[];
+}
 export interface DisponibilidadResponse {
   fecha: string;
   id_profesional: number | null;

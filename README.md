@@ -1,8 +1,8 @@
-# TuTurno
+# clickturno
 
 Sistema SaaS de gestión y reserva de turnos para profesionales, consultorios y pequeños negocios.
 
-**TuTurno** permite administrar agendas, disponibilidad y reservas online desde una única plataforma, preparada para múltiples empresas (multiempresa).
+**clickturno** permite administrar agendas, disponibilidad y reservas online desde una única plataforma, preparada para múltiples empresas (multiempresa).
 
 Está desarrollado con:
 
@@ -53,7 +53,7 @@ Está desarrollado con:
 
 # Modelo SaaS
 
-TuTurno utiliza una arquitectura **multiempresa**.
+clickturno utiliza una arquitectura **multiempresa**.
 
 Existe un único:
 

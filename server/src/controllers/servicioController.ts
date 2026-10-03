@@ -1,194 +1,364 @@
-import type { Request, Response } from 'express';
-import { asyncHandler, HttpError } from '../middleware/errorHandler.js';
-import { servicioRepository } from '../repository/servicioRepository.js';
-import { organizacionService } from '../services/organizacionService.js';
+import type {
+  Request,
+  Response,
+} from 'express';
 
-function obtenerIdOrganizacion(req: Request): number {
-  const idOrganizacion = req.authUser?.idOrganizacion;
+import {
+  asyncHandler,
+  HttpError,
+} from '../middleware/errorHandler.js';
+
+import {
+  servicioRepository,
+} from '../repository/servicioRepository.js';
+
+import {
+  organizacionService,
+} from '../services/organizacionService.js';
+
+function obtenerIdOrganizacion(
+  req: Request,
+): number {
+  const idOrganizacion =
+    req.authUser?.idOrganizacion;
 
   if (!idOrganizacion) {
-    throw new HttpError('No se pudo identificar la organización.', 401);
+    throw new HttpError(
+      'No se pudo identificar la organización.',
+      401,
+    );
   }
 
   return idOrganizacion;
 }
 
 export const servicioController = {
-    publicList: asyncHandler(async (_req: Request, res: Response) => {
-    // Temporal: organización usada por el circuito público actual.
-    // Después se obtendrá mediante el slug de la URL.
-    const idOrganizacion = 1;
-
-    const items = await servicioRepository.findAll(idOrganizacion);
-
-    res.json(items);
-  }),
-
-  publicListActive: asyncHandler(async (_req: Request, res: Response) => {
-    // Temporal: organización usada por el circuito público actual.
-    const idOrganizacion = 1;
-
-    const items = await servicioRepository.findAllActive(idOrganizacion);
-
-    res.json(items);
-  }),
+  // =====================================================
+  // PUBLICO - MULTIEMPRESA POR SLUG
+  // =====================================================
 
   publicListActiveBySlug: asyncHandler(
-  async (req: Request, res: Response) => {
-    const { slug } = req.params;
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const { slug } =
+        req.params;
 
-    const organizacion =
-      await organizacionService.obtenerPorSlug(slug);
+      const organizacion =
+        await organizacionService.obtenerPorSlug(
+          slug,
+        );
 
-    const items =
-      await servicioRepository.findAllActive(
-        organizacion.id_organizacion,
-      );
+      const items =
+        await servicioRepository.findAllActive(
+          organizacion.id_organizacion,
+        );
 
-    res.json(items);
+      res.json(items);
     },
   ),
 
-  publicGet: asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const idOrganizacion = 1;
+  publicGetBySlug: asyncHandler(
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const { slug } =
+        req.params;
 
-    if (!Number.isInteger(id) || id <= 0) {
-      throw new HttpError(
-        'El identificador del servicio no es válido.',
-        400,
-      );
-    }
+      const id =
+        Number(
+          req.params.id,
+        );
 
-    const item = await servicioRepository.findById(
-      id,
-      idOrganizacion,
-    );
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+        throw new HttpError(
+          'El identificador del servicio no es válido.',
+          400,
+        );
+      }
 
-    if (!item) {
-      throw new HttpError('Servicio no encontrado.', 404);
-    }
+      const organizacion =
+        await organizacionService.obtenerPorSlug(
+          slug,
+        );
 
-    res.json(item);
-  }),
-  list: asyncHandler(async (req: Request, res: Response) => {
-    const idOrganizacion = obtenerIdOrganizacion(req);
+      const item =
+        await servicioRepository.findById(
+          id,
+          organizacion.id_organizacion,
+        );
 
-    const items = await servicioRepository.findAll(idOrganizacion);
+      if (!item) {
+        throw new HttpError(
+          'Servicio no encontrado.',
+          404,
+        );
+      }
 
-    res.json(items);
-  }),
+      res.json(item);
+    },
+  ),
 
-  listActive: asyncHandler(async (req: Request, res: Response) => {
-    const idOrganizacion = obtenerIdOrganizacion(req);
+  // =====================================================
+  // ADMIN - AUTENTICADO
+  // =====================================================
 
-    const items = await servicioRepository.findAllActive(idOrganizacion);
+  list: asyncHandler(
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const idOrganizacion =
+        obtenerIdOrganizacion(
+          req,
+        );
 
-    res.json(items);
-  }),
+      const items =
+        await servicioRepository.findAll(
+          idOrganizacion,
+        );
 
-  get: asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const idOrganizacion = obtenerIdOrganizacion(req);
+      res.json(items);
+    },
+  ),
 
-    if (!Number.isInteger(id) || id <= 0) {
-      throw new HttpError('El identificador del servicio no es válido.', 400);
-    }
+  listActive: asyncHandler(
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const idOrganizacion =
+        obtenerIdOrganizacion(
+          req,
+        );
 
-    const item = await servicioRepository.findById(
-      id,
-      idOrganizacion,
-    );
+      const items =
+        await servicioRepository.findAllActive(
+          idOrganizacion,
+        );
 
-    if (!item) {
-      throw new HttpError('Servicio no encontrado.', 404);
-    }
+      res.json(items);
+    },
+  ),
 
-    res.json(item);
-  }),
+  get: asyncHandler(
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const id =
+        Number(
+          req.params.id,
+        );
 
-  create: asyncHandler(async (req: Request, res: Response) => {
-    const idOrganizacion = obtenerIdOrganizacion(req);
+      const idOrganizacion =
+        obtenerIdOrganizacion(
+          req,
+        );
 
-    const {
-      nombre,
-      descripcion,
-      duracion_minutos,
-      precio,
-      activo,
-    } = req.body;
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+        throw new HttpError(
+          'El identificador del servicio no es válido.',
+          400,
+        );
+      }
 
-    if (!nombre?.trim()) {
-      throw new HttpError('El nombre es obligatorio.', 400);
-    }
+      const item =
+        await servicioRepository.findById(
+          id,
+          idOrganizacion,
+        );
 
-    const duracion = Number(duracion_minutos);
-    const precioNumerico = Number(precio);
+      if (!item) {
+        throw new HttpError(
+          'Servicio no encontrado.',
+          404,
+        );
+      }
 
-    if (!Number.isFinite(duracion) || duracion <= 0) {
-      throw new HttpError(
-        'La duración debe ser mayor que cero.',
-        400,
-      );
-    }
+      res.json(item);
+    },
+  ),
 
-    if (!Number.isFinite(precioNumerico) || precioNumerico < 0) {
-      throw new HttpError(
-        'El precio no puede ser negativo.',
-        400,
-      );
-    }
+  create: asyncHandler(
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const idOrganizacion =
+        obtenerIdOrganizacion(
+          req,
+        );
 
-    const item = await servicioRepository.create({
-      id_organizacion: idOrganizacion,
-      nombre: nombre.trim(),
-      descripcion: descripcion?.trim() || null,
-      duracion_minutos: duracion,
-      precio: precioNumerico,
-      activo: activo ?? true,
-    });
+      const {
+        nombre,
+        descripcion,
+        duracion_minutos,
+        precio,
+        activo,
+      } = req.body;
 
-    res.status(201).json(item);
-  }),
+      if (!nombre?.trim()) {
+        throw new HttpError(
+          'El nombre es obligatorio.',
+          400,
+        );
+      }
 
-  update: asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const idOrganizacion = obtenerIdOrganizacion(req);
+      const duracion =
+        Number(
+          duracion_minutos,
+        );
 
-    if (!Number.isInteger(id) || id <= 0) {
-      throw new HttpError('El identificador del servicio no es válido.', 400);
-    }
+      const precioNumerico =
+        Number(
+          precio,
+        );
 
-    const item = await servicioRepository.update(
-      id,
-      idOrganizacion,
-      req.body,
-    );
+      if (
+        !Number.isFinite(
+          duracion,
+        ) ||
+        duracion <= 0
+      ) {
+        throw new HttpError(
+          'La duración debe ser mayor que cero.',
+          400,
+        );
+      }
 
-    if (!item) {
-      throw new HttpError('Servicio no encontrado.', 404);
-    }
+      if (
+        !Number.isFinite(
+          precioNumerico,
+        ) ||
+        precioNumerico < 0
+      ) {
+        throw new HttpError(
+          'El precio no puede ser negativo.',
+          400,
+        );
+      }
 
-    res.json(item);
-  }),
+      const item =
+        await servicioRepository.create({
+          id_organizacion:
+            idOrganizacion,
 
-  remove: asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const idOrganizacion = obtenerIdOrganizacion(req);
+          nombre:
+            nombre.trim(),
 
-    if (!Number.isInteger(id) || id <= 0) {
-      throw new HttpError('El identificador del servicio no es válido.', 400);
-    }
+          descripcion:
+            descripcion?.trim() ||
+            null,
 
-    const eliminado = await servicioRepository.delete(
-      id,
-      idOrganizacion,
-    );
+          duracion_minutos:
+            duracion,
 
-    if (!eliminado) {
-      throw new HttpError('Servicio no encontrado.', 404);
-    }
+          precio:
+            precioNumerico,
 
-    res.status(204).send();
-  }),
+          activo:
+            activo ?? true,
+        });
+
+      res
+        .status(201)
+        .json(item);
+    },
+  ),
+
+  update: asyncHandler(
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const id =
+        Number(
+          req.params.id,
+        );
+
+      const idOrganizacion =
+        obtenerIdOrganizacion(
+          req,
+        );
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+        throw new HttpError(
+          'El identificador del servicio no es válido.',
+          400,
+        );
+      }
+
+      const item =
+        await servicioRepository.update(
+          id,
+          idOrganizacion,
+          req.body,
+        );
+
+      if (!item) {
+        throw new HttpError(
+          'Servicio no encontrado.',
+          404,
+        );
+      }
+
+      res.json(item);
+    },
+  ),
+
+  remove: asyncHandler(
+    async (
+      req: Request,
+      res: Response,
+    ) => {
+      const id =
+        Number(
+          req.params.id,
+        );
+
+      const idOrganizacion =
+        obtenerIdOrganizacion(
+          req,
+        );
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+        throw new HttpError(
+          'El identificador del servicio no es válido.',
+          400,
+        );
+      }
+
+      const eliminado =
+        await servicioRepository.delete(
+          id,
+          idOrganizacion,
+        );
+
+      if (!eliminado) {
+        throw new HttpError(
+          'Servicio no encontrado.',
+          404,
+        );
+      }
+
+      res
+        .status(204)
+        .send();
+    },
+  ),
 };

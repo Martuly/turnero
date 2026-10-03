@@ -1,8 +1,9 @@
 import { withTransaction } from '../db/pool.js';
-import { clienteRepository } from '../repository/clienteRepository.js';
+
 import { profesionalRepository } from '../repository/profesionalRepository.js';
 import { servicioRepository } from '../repository/servicioRepository.js';
 import { turnoRepository } from '../repository/turnoRepository.js';
+
 import {
   getHorariosDisponibles,
   toMinutes,
@@ -15,8 +16,6 @@ import type {
   TurnoRow,
 } from '../types.js';
 
-const DEFAULT_ORG_ID = 1;
-
 type AccionTurno =
   | 'NUEVO_TURNO'
   | 'CONFIRMAR_TURNO'
@@ -26,7 +25,10 @@ type AccionTurno =
 export class BookingError extends Error {
   status: number;
 
-  constructor(message: string, status = 400) {
+  constructor(
+    message: string,
+    status = 400,
+  ) {
     super(message);
     this.name = 'BookingError';
     this.status = status;
@@ -36,12 +38,10 @@ export class BookingError extends Error {
 /**
  * Envía a n8n las novedades relacionadas con un turno.
  *
- * Por el momento:
- * - NUEVO_TURNO usa N8N_WEBHOOK_NUEVO_TURNO.
- * - Las demás acciones usan N8N_WEBHOOK_GESTION_TURNO.
+ * NUEVO_TURNO usa N8N_WEBHOOK_NUEVO_TURNO.
+ * Las demás acciones usan N8N_WEBHOOK_GESTION_TURNO.
  *
  * Si n8n falla, la operación principal no se revierte.
- * El error queda registrado en el log del backend.
  */
 async function notificarN8n(
   accion: AccionTurno,
@@ -52,6 +52,12 @@ async function notificarN8n(
       ? process.env.N8N_WEBHOOK_NUEVO_TURNO
       : process.env.N8N_WEBHOOK_GESTION_TURNO;
 
+  console.log(
+  '[n8n] accion:',
+  accion,
+  'url:',
+  webhookUrl,
+);
   if (!webhookUrl) {
     console.warn(
       `No se configuró el webhook de n8n para la acción ${accion}.`,
@@ -60,57 +66,101 @@ async function notificarN8n(
   }
 
   try {
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      webhookUrl,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          accion,
+
+          id_turno:
+            turno.id_turno,
+
+          id_organizacion:
+            turno.id_organizacion,
+
+          id_profesional:
+            turno.id_profesional,
+
+          id_servicio:
+            turno.id_servicio,
+
+          token_gestion:
+            turno.token_gestion,
+
+          calendar_event_id:
+            turno.calendar_event_id,
+
+          cliente: {
+            nombre:
+              turno.cliente_nombre,
+
+            apellido:
+              turno.cliente_apellido,
+
+            email:
+              turno.cliente_email,
+
+            telefono:
+              turno.cliente_telefono,
+          },
+
+          servicio: {
+            nombre:
+              turno.servicio_nombre,
+
+            duracion_minutos:
+              turno.servicio_duracion_minutos,
+
+            precio:
+              turno.servicio_precio,
+          },
+
+          profesional: {
+            nombre:
+              turno.profesional_nombre,
+
+            apellido:
+              turno.profesional_apellido,
+          },
+
+          fecha:
+            turno.fecha,
+
+          hora_inicio:
+            turno.hora_inicio,
+
+          hora_fin:
+            turno.hora_fin,
+
+          estado:
+            turno.estado,
+
+          fecha_confirmacion:
+            turno.fecha_confirmacion,
+
+          fecha_cancelacion:
+            turno.fecha_cancelacion,
+
+          motivo_cancelacion:
+            turno.motivo_cancelacion,
+        }),
       },
+    );
 
-      body: JSON.stringify({
-        accion,
-
-        id_turno: turno.id_turno,
-        id_organizacion: turno.id_organizacion,
-        id_profesional: turno.id_profesional,
-        id_servicio: turno.id_servicio,
-
-        token_gestion: turno.token_gestion,
-        calendar_event_id: turno.calendar_event_id,
-
-        cliente: {
-          nombre: turno.cliente_nombre,
-          apellido: turno.cliente_apellido,
-          email: turno.cliente_email,
-          telefono: turno.cliente_telefono,
-        },
-
-        servicio: {
-          nombre: turno.servicio_nombre,
-          duracion_minutos:
-            turno.servicio_duracion_minutos,
-          precio: turno.servicio_precio,
-        },
-
-        profesional: {
-          nombre: turno.profesional_nombre,
-          apellido: turno.profesional_apellido,
-        },
-
-        fecha: turno.fecha,
-        hora_inicio: turno.hora_inicio,
-        hora_fin: turno.hora_fin,
-
-        estado: turno.estado,
-        fecha_confirmacion: turno.fecha_confirmacion,
-        fecha_cancelacion: turno.fecha_cancelacion,
-        motivo_cancelacion: turno.motivo_cancelacion,
-      }),
-    });
-
+    console.log(
+  '[n8n] status:',
+  response.status,
+  response.statusText,
+);
     if (!response.ok) {
-      const responseBody = await response
-        .text()
-        .catch(() => '');
+      const responseBody =
+        await response
+          .text()
+          .catch(() => '');
 
       console.error(
         `n8n respondió con estado ${response.status} para ${accion}.`,
@@ -126,60 +176,113 @@ async function notificarN8n(
 }
 
 export const turnoService = {
-  async list(filters: {
-    fechaDesde?: string;
-    fechaHasta?: string;
-    idProfesional?: number;
-    idServicio?: number;
-    estado?: string;
-  }) {
-    return turnoRepository.findWithFilters(filters as never);
+  // =====================================================
+  // LISTADO ADMIN - UNA SOLA DB / MULTIEMPRESA
+  // =====================================================
+
+  async list(
+    idOrganizacion: number,
+    filters: {
+      fechaDesde?: string;
+      fechaHasta?: string;
+      idProfesional?: number;
+      idServicio?: number;
+      estado?: string;
+    },
+  ) {
+    return turnoRepository.findWithFilters(
+      idOrganizacion,
+      filters as never,
+    );
   },
 
-  async getById(id: number): Promise<TurnoDetalleRow> {
-    const turno = await turnoRepository.findDetailById(id);
+  // =====================================================
+  // DETALLE ADMIN
+  // =====================================================
+
+  async getById(
+    id: number,
+    idOrganizacion: number,
+  ): Promise<TurnoDetalleRow> {
+    const turno =
+      await turnoRepository.findDetailById(
+        id,
+        idOrganizacion,
+      );
 
     if (!turno) {
-      throw new BookingError('Turno no encontrado.', 404);
+      throw new BookingError(
+        'Turno no encontrado.',
+        404,
+      );
     }
 
     return turno;
   },
 
+  // =====================================================
+  // CREAR TURNO - UNA SOLA DB / MULTIEMPRESA
+  // =====================================================
+
   async crearTurno(
+    idOrganizacion: number,
     payload: CrearTurnoPayload,
   ): Promise<TurnoDetalleRow> {
-    // 1. Validar que el servicio exista y esté activo.
-    const servicio = await servicioRepository.findById(
-      payload.id_servicio,
-      DEFAULT_ORG_ID,
-    );
+    // -----------------------------------------------------
+    // 1. Validar servicio dentro de la organización
+    // -----------------------------------------------------
 
-    if (!servicio || !servicio.activo) {
+    const servicio =
+      await servicioRepository.findById(
+        payload.id_servicio,
+        idOrganizacion,
+      );
+
+    if (
+      !servicio ||
+      !servicio.activo
+    ) {
       throw new BookingError(
         'El servicio no está disponible.',
       );
     }
 
-    /*
-     * 2. Determinar el profesional.
-     *
-     * Si el cliente seleccionó un profesional, se valida su
-     * disponibilidad.
-     *
-     * Si no seleccionó ninguno, el sistema busca el primer
-     * profesional disponible que preste el servicio.
-     */
-    let profId = payload.id_profesional;
+    // -----------------------------------------------------
+    // 2. Determinar profesional
+    // -----------------------------------------------------
+
+    let profId =
+      payload.id_profesional;
 
     if (profId != null) {
+      const profesional =
+        await profesionalRepository.findById(
+          profId,
+          idOrganizacion,
+        );
+
+      if (
+        !profesional ||
+        !profesional.activo
+      ) {
+        throw new BookingError(
+          'El profesional no está disponible.',
+        );
+      }
+
       const disponibilidad =
         await getHorariosDisponibles({
-        idOrganizacion: DEFAULT_ORG_ID,
-        idServicio: payload.id_servicio,
-        idProfesional: profId,
-        fecha: payload.fecha,
-      });
+          idOrganizacion,
+
+          idServicio:
+            payload.id_servicio,
+
+          idProfesional:
+            profId,
+
+          fecha:
+            payload.fecha,
+        });
 
       if (
         !disponibilidad.horarios.includes(
@@ -192,26 +295,38 @@ export const turnoService = {
       }
     } else {
       const profesionales =
-        await profesionalRepository.getProfesionalesByServicio(
-          payload.id_servicio,
-          DEFAULT_ORG_ID,
-        );
+        await profesionalRepository
+          .getProfesionalesByServicio(
+            payload.id_servicio,
+            idOrganizacion,
+          );
 
-      for (const profesional of profesionales) {
+      for (
+        const profesional
+        of profesionales
+      ) {
         const disponibilidad =
           await getHorariosDisponibles({
-          idOrganizacion: DEFAULT_ORG_ID,
-          idServicio: payload.id_servicio,
-          idProfesional: profesional.id_profesional,
-          fecha: payload.fecha,
-        });
+            idOrganizacion,
+
+            idServicio:
+              payload.id_servicio,
+
+            idProfesional:
+              profesional.id_profesional,
+
+            fecha:
+              payload.fecha,
+          });
 
         if (
           disponibilidad.horarios.includes(
             payload.hora_inicio,
           )
         ) {
-          profId = profesional.id_profesional;
+          profId =
+            profesional.id_profesional;
+
           break;
         }
       }
@@ -223,17 +338,23 @@ export const turnoService = {
       }
     }
 
-    // 3. Validar que el profesional preste el servicio.
-    const serviciosProfesional =
-      await profesionalRepository.getServiciosByProfesional(
-        profId,
-        DEFAULT_ORG_ID,
-      );
+    // -----------------------------------------------------
+    // 3. Verificar relación profesional / servicio
+    // -----------------------------------------------------
 
-    const ofreceServicio = serviciosProfesional.some(
-      (item) =>
-        item.id_servicio === payload.id_servicio,
-    );
+    const serviciosProfesional =
+      await profesionalRepository
+        .getServiciosByProfesional(
+          profId,
+          idOrganizacion,
+        );
+
+    const ofreceServicio =
+      serviciosProfesional.some(
+        (item) =>
+          item.id_servicio ===
+          payload.id_servicio,
+      );
 
     if (!ofreceServicio) {
       throw new BookingError(
@@ -241,29 +362,36 @@ export const turnoService = {
       );
     }
 
-    // 4. Calcular la hora de finalización.
-    const horaFin = toHHMM(
-      toMinutes(payload.hora_inicio) +
-        servicio.duracion_minutos,
-    );
+    // -----------------------------------------------------
+    // 4. Calcular hora final
+    // -----------------------------------------------------
 
-    /*
-     * 5. Crear el turno.
-     *
-     * Dentro de la transacción volvemos a verificar el conflicto.
-     * Esto reduce el riesgo de que dos personas reserven el mismo
-     * horario casi simultáneamente.
-     */
-    const turno = await withTransaction(
+    const horaFin =
+      toHHMM(
+        toMinutes(
+          payload.hora_inicio,
+        ) +
+          servicio.duracion_minutos,
+      );
+
+    // -----------------------------------------------------
+    // 5. Transacción en la única DB
+    // -----------------------------------------------------
+
+    let turno: TurnoRow | null = null;
+
+    await withTransaction(
       async (client) => {
+        // Evitar doble reserva.
         const existeConflicto =
-          await turnoRepository.hasConflict(
-            client,
-            profId,
-            payload.fecha,
-            payload.hora_inicio,
-            horaFin,
-          );
+        await turnoRepository.hasConflict(
+          client,
+          idOrganizacion,
+          profId,
+          payload.fecha,
+          payload.hora_inicio,
+          horaFin,
+        );
 
         if (existeConflicto) {
           throw new BookingError(
@@ -271,42 +399,114 @@ export const turnoService = {
           );
         }
 
-        let cliente =
-          await clienteRepository.findByEmail(
-            payload.cliente.email,
+        // Buscar cliente SOLO dentro de la organización.
+        const clienteResult =
+          await client.query(
+            `
+              SELECT *
+              FROM cliente
+              WHERE id_organizacion = $1
+                AND LOWER(email) = LOWER($2)
+              LIMIT 1
+            `,
+            [
+              idOrganizacion,
+              payload.cliente.email,
+            ],
           );
 
+        let cliente =
+          clienteResult.rows[0];
+
+        // Crear cliente si todavía no existe en esta organización.
         if (!cliente) {
-          cliente = await clienteRepository.create({
-            nombre: payload.cliente.nombre,
-            apellido: payload.cliente.apellido,
-            email: payload.cliente.email,
-            telefono:
-              payload.cliente.telefono?.trim() ||
-              null,
-          });
+          const nuevoClienteResult =
+            await client.query(
+              `
+                INSERT INTO cliente (
+                  id_organizacion,
+                  nombre,
+                  apellido,
+                  email,
+                  telefono
+                )
+                VALUES (
+                  $1,
+                  $2,
+                  $3,
+                  $4,
+                  $5
+                )
+                RETURNING *
+              `,
+              [
+                idOrganizacion,
+                payload.cliente.nombre,
+                payload.cliente.apellido,
+                payload.cliente.email,
+                payload.cliente.telefono
+                  ?.trim() || null,
+              ],
+            );
+
+          cliente =
+            nuevoClienteResult.rows[0];
+
+          if (!cliente) {
+            throw new BookingError(
+              'No fue posible crear el cliente.',
+              500,
+            );
+          }
         }
 
-        return turnoRepository.createInTransaction(
-          client,
-          {
-            id_organizacion: DEFAULT_ORG_ID,
-            id_profesional: profId,
-            id_servicio: payload.id_servicio,
-            id_cliente: cliente.id_cliente,
-            fecha: payload.fecha,
-            hora_inicio: payload.hora_inicio,
-            hora_fin: horaFin,
-            estado: 'PENDIENTE',
-          },
-        );
+        turno =
+          await turnoRepository
+            .createInTransaction(
+              client,
+              {
+                id_organizacion:
+                  idOrganizacion,
+
+                id_profesional:
+                  profId,
+
+                id_servicio:
+                  payload.id_servicio,
+
+                id_cliente:
+                  cliente.id_cliente,
+
+                fecha:
+                  payload.fecha,
+
+                hora_inicio:
+                  payload.hora_inicio,
+
+                hora_fin:
+                  horaFin,
+
+                estado:
+                  'PENDIENTE',
+              },
+            );
       },
     );
 
-    // 6. Recuperar el turno con todos sus datos relacionados.
+   if (!turno) {
+      throw new BookingError(
+        'No fue posible crear el turno.',
+        500,
+      );
+    }
+
+    const turnoCreado =
+      turno as TurnoRow;
+
     const detalle =
       await turnoRepository.findDetailById(
-        turno.id_turno,
+        turnoCreado.id_turno,
+        idOrganizacion,
       );
 
     if (!detalle) {
@@ -316,16 +516,27 @@ export const turnoService = {
       );
     }
 
-    // 7. Crear evento y enviar correo mediante n8n.
-    await notificarN8n('NUEVO_TURNO', detalle);
+    // -----------------------------------------------------
+    // 7. Notificar a n8n
+    // -----------------------------------------------------
+
+    await notificarN8n(
+      'NUEVO_TURNO',
+      detalle,
+    );
 
     return detalle;
   },
 
+  // =====================================================
+  // CONFIRMAR - ACCESO PÚBLICO POR TOKEN
+  // =====================================================
+
   async confirmarTurno(
     token: string,
   ): Promise<TurnoDetalleRow> {
-    const tokenNormalizado = token.trim();
+    const tokenNormalizado =
+      token.trim();
 
     if (!tokenNormalizado) {
       throw new BookingError(
@@ -334,9 +545,10 @@ export const turnoService = {
     }
 
     const existente =
-      await turnoRepository.findDetailByToken(
-        tokenNormalizado,
-      );
+      await turnoRepository
+        .findDetailByToken(
+          tokenNormalizado,
+        );
 
     if (!existente) {
       throw new BookingError(
@@ -345,23 +557,27 @@ export const turnoService = {
       );
     }
 
-    /*
-     * La confirmación es idempotente:
-     * si el cliente abre nuevamente el enlace, mostramos el
-     * turno confirmado en lugar de devolver un error.
-     */
-    if (existente.estado === 'CONFIRMADO') {
+    if (
+      existente.estado ===
+      'CONFIRMADO'
+    ) {
       return existente;
     }
 
-    if (existente.estado === 'CANCELADO') {
+    if (
+      existente.estado ===
+      'CANCELADO'
+    ) {
       throw new BookingError(
         'El turno está cancelado y no puede confirmarse.',
         409,
       );
     }
 
-    if (existente.estado !== 'PENDIENTE') {
+    if (
+      existente.estado !==
+      'PENDIENTE'
+    ) {
       throw new BookingError(
         `El turno no puede confirmarse porque se encuentra en estado ${existente.estado}.`,
         409,
@@ -369,9 +585,10 @@ export const turnoService = {
     }
 
     const actualizado =
-      await turnoRepository.confirmarByToken(
-        tokenNormalizado,
-      );
+      await turnoRepository
+        .confirmarByToken(
+          tokenNormalizado,
+        );
 
     if (!actualizado) {
       throw new BookingError(
@@ -381,9 +598,10 @@ export const turnoService = {
     }
 
     const detalle =
-      await turnoRepository.findDetailByToken(
-        tokenNormalizado,
-      );
+      await turnoRepository
+        .findDetailByToken(
+          tokenNormalizado,
+        );
 
     if (!detalle) {
       throw new BookingError(
@@ -400,11 +618,16 @@ export const turnoService = {
     return detalle;
   },
 
+  // =====================================================
+  // CANCELAR - ACCESO PÚBLICO POR TOKEN
+  // =====================================================
+
   async cancelarTurno(
     token: string,
     motivo?: string,
   ): Promise<TurnoDetalleRow> {
-    const tokenNormalizado = token.trim();
+    const tokenNormalizado =
+      token.trim();
 
     if (!tokenNormalizado) {
       throw new BookingError(
@@ -413,9 +636,10 @@ export const turnoService = {
     }
 
     const existente =
-      await turnoRepository.findDetailByToken(
-        tokenNormalizado,
-      );
+      await turnoRepository
+        .findDetailByToken(
+          tokenNormalizado,
+        );
 
     if (!existente) {
       throw new BookingError(
@@ -424,17 +648,18 @@ export const turnoService = {
       );
     }
 
-    /*
-     * La cancelación también es idempotente:
-     * si ya se encontraba cancelado, devolvemos su estado actual.
-     */
-    if (existente.estado === 'CANCELADO') {
+    if (
+      existente.estado ===
+      'CANCELADO'
+    ) {
       return existente;
     }
 
     if (
-      existente.estado === 'FINALIZADO' ||
-      existente.estado === 'AUSENTE'
+      existente.estado ===
+        'FINALIZADO' ||
+      existente.estado ===
+        'AUSENTE'
     ) {
       throw new BookingError(
         `El turno no puede cancelarse porque se encuentra en estado ${existente.estado}.`,
@@ -447,7 +672,8 @@ export const turnoService = {
 
     if (
       motivoNormalizado &&
-      motivoNormalizado.length > 255
+      motivoNormalizado.length >
+        255
     ) {
       throw new BookingError(
         'El motivo de cancelación no puede superar los 255 caracteres.',
@@ -455,10 +681,11 @@ export const turnoService = {
     }
 
     const actualizado =
-      await turnoRepository.cancelarByToken(
-        tokenNormalizado,
-        motivoNormalizado,
-      );
+      await turnoRepository
+        .cancelarByToken(
+          tokenNormalizado,
+          motivoNormalizado,
+        );
 
     if (!actualizado) {
       throw new BookingError(
@@ -468,9 +695,10 @@ export const turnoService = {
     }
 
     const detalle =
-      await turnoRepository.findDetailByToken(
-        tokenNormalizado,
-      );
+      await turnoRepository
+        .findDetailByToken(
+          tokenNormalizado,
+        );
 
     if (!detalle) {
       throw new BookingError(
@@ -487,12 +715,17 @@ export const turnoService = {
     return detalle;
   },
 
+  // =====================================================
+  // REPROGRAMAR - ACCESO PÚBLICO POR TOKEN
+  // =====================================================
+
   async reprogramarTurno(
     token: string,
     nuevaFecha: string,
     nuevaHoraInicio: string,
   ): Promise<TurnoDetalleRow> {
-    const tokenNormalizado = token.trim();
+    const tokenNormalizado =
+      token.trim();
 
     if (!tokenNormalizado) {
       throw new BookingError(
@@ -500,16 +733,20 @@ export const turnoService = {
       );
     }
 
-    if (!nuevaFecha || !nuevaHoraInicio) {
+    if (
+      !nuevaFecha ||
+      !nuevaHoraInicio
+    ) {
       throw new BookingError(
         'La nueva fecha y hora son obligatorias.',
       );
     }
 
     const existente =
-      await turnoRepository.findDetailByToken(
-        tokenNormalizado,
-      );
+      await turnoRepository
+        .findDetailByToken(
+          tokenNormalizado,
+        );
 
     if (!existente) {
       throw new BookingError(
@@ -519,9 +756,12 @@ export const turnoService = {
     }
 
     if (
-      existente.estado === 'CANCELADO' ||
-      existente.estado === 'FINALIZADO' ||
-      existente.estado === 'AUSENTE'
+      existente.estado ===
+        'CANCELADO' ||
+      existente.estado ===
+        'FINALIZADO' ||
+      existente.estado ===
+        'AUSENTE'
     ) {
       throw new BookingError(
         `El turno no puede reprogramarse porque se encuentra en estado ${existente.estado}.`,
@@ -535,7 +775,10 @@ export const turnoService = {
         existente.id_organizacion,
       );
 
-    if (!servicio || !servicio.activo) {
+    if (
+      !servicio ||
+      !servicio.activo
+    ) {
       throw new BookingError(
         'El servicio del turno ya no está disponible.',
         409,
@@ -544,11 +787,20 @@ export const turnoService = {
 
     const disponibilidad =
       await getHorariosDisponibles({
-        idOrganizacion: existente.id_organizacion,
-        idServicio: existente.id_servicio,
-        idProfesional: existente.id_profesional,
-        fecha: nuevaFecha,
-        excludeTurnoId: existente.id_turno,
+        idOrganizacion:
+          existente.id_organizacion,
+
+        idServicio:
+          existente.id_servicio,
+
+        idProfesional:
+          existente.id_profesional,
+
+        fecha:
+          nuevaFecha,
+
+        excludeTurnoId:
+          existente.id_turno,
       });
 
     if (
@@ -562,15 +814,20 @@ export const turnoService = {
       );
     }
 
-    const nuevaHoraFin = toHHMM(
-      toMinutes(nuevaHoraInicio) +
-        servicio.duracion_minutos,
-    );
+    const nuevaHoraFin =
+      toHHMM(
+        toMinutes(
+          nuevaHoraInicio,
+        ) +
+          servicio.duracion_minutos,
+      );
 
-    await withTransaction(async (client) => {
-      const existeConflicto =
+    await withTransaction(
+      async (client) => {
+        const existeConflicto =
         await turnoRepository.hasConflict(
           client,
+          existente.id_organizacion,
           existente.id_profesional,
           nuevaFecha,
           nuevaHoraInicio,
@@ -578,36 +835,44 @@ export const turnoService = {
           existente.id_turno,
         );
 
-      if (existeConflicto) {
-        throw new BookingError(
-          'El horario acaba de ser reservado. Elegí otro.',
-          409,
-        );
-      }
+        if (existeConflicto) {
+          throw new BookingError(
+            'El horario acaba de ser reservado. Elegí otro.',
+            409,
+          );
+        }
 
-      const actualizado =
-        await turnoRepository.reprogramarByToken(
-          client,
-          tokenNormalizado,
-          {
-            fecha: nuevaFecha,
-            hora_inicio: nuevaHoraInicio,
-            hora_fin: nuevaHoraFin,
-          },
-        );
+        const actualizado =
+          await turnoRepository
+            .reprogramarByToken(
+              client,
+              tokenNormalizado,
+              {
+                fecha:
+                  nuevaFecha,
 
-      if (!actualizado) {
-        throw new BookingError(
-          'No fue posible reprogramar el turno.',
-          409,
-        );
-      }
-    });
+                hora_inicio:
+                  nuevaHoraInicio,
+
+                hora_fin:
+                  nuevaHoraFin,
+              },
+            );
+
+        if (!actualizado) {
+          throw new BookingError(
+            'No fue posible reprogramar el turno.',
+            409,
+          );
+        }
+      },
+    );
 
     const detalle =
-      await turnoRepository.findDetailByToken(
-        tokenNormalizado,
-      );
+      await turnoRepository
+        .findDetailByToken(
+          tokenNormalizado,
+        );
 
     if (!detalle) {
       throw new BookingError(
@@ -623,14 +888,22 @@ export const turnoService = {
 
     return detalle;
   },
+
+  // =====================================================
+  // GOOGLE CALENDAR
+  // =====================================================
+
   async guardarCalendarEventId(
     idTurno: number,
+    idOrganizacion: number,
     calendarEventId: string,
   ): Promise<TurnoRow> {
     const existente =
-      await turnoRepository.findDetailById(
-        idTurno,
-      );
+      await turnoRepository
+        .findDetailById(
+          idTurno,
+          idOrganizacion,
+        );
 
     if (!existente) {
       throw new BookingError(
@@ -640,10 +913,12 @@ export const turnoService = {
     }
 
     const actualizado =
-      await turnoRepository.updateCalendarEventId(
-        idTurno,
-        calendarEventId,
-      );
+      await turnoRepository
+        .updateCalendarEventId(
+          idTurno,
+          idOrganizacion,
+          calendarEventId,
+        );
 
     if (!actualizado) {
       throw new BookingError(
@@ -654,83 +929,103 @@ export const turnoService = {
 
     return actualizado;
   },
+
   async sincronizarRespuestaCalendar(
     calendarEventId: string,
     responseStatus: string,
-    ): Promise<TurnoRow> {
-      const eventIdNormalizado =
-        calendarEventId.trim();
+  ): Promise<TurnoRow> {
+    const eventIdNormalizado =
+      calendarEventId.trim();
 
-      const responseStatusNormalizado =
-        responseStatus.trim();
+    const responseStatusNormalizado =
+      responseStatus.trim();
 
-      if (!eventIdNormalizado) {
-        throw new BookingError(
-          'calendar_event_id es obligatorio.',
-        );
-      }
+    if (!eventIdNormalizado) {
+      throw new BookingError(
+        'calendar_event_id es obligatorio.',
+      );
+    }
 
-      if (!responseStatusNormalizado) {
-        throw new BookingError(
-          'response_status es obligatorio.',
-        );
-      }
+    if (
+      !responseStatusNormalizado
+    ) {
+      throw new BookingError(
+        'response_status es obligatorio.',
+      );
+    }
 
-      const existente =
-        await turnoRepository.findByCalendarEventId(
+    const existente =
+      await turnoRepository
+        .findByCalendarEventId(
           eventIdNormalizado,
         );
 
-      if (!existente) {
+    if (!existente) {
+      throw new BookingError(
+        'No se encontró un turno asociado al evento de Google Calendar.',
+        404,
+      );
+    }
+
+    let nuevoEstado:
+      TurnoRow['estado'] |
+      null = null;
+
+    switch (
+      responseStatusNormalizado
+    ) {
+      case 'accepted':
+        nuevoEstado =
+          'CONFIRMADO';
+        break;
+
+      case 'declined':
+        nuevoEstado =
+          'CANCELADO';
+        break;
+
+      case 'tentative':
+      case 'needsAction':
+        return existente;
+
+      default:
         throw new BookingError(
-          'No se encontró un turno asociado al evento de Google Calendar.',
-          404,
+          `Estado de respuesta de Google Calendar no reconocido: ${responseStatusNormalizado}.`,
         );
-      }
+    }
 
-      let nuevoEstado: TurnoRow['estado'] | null = null;
-
-      switch (responseStatusNormalizado) {
-        case 'accepted':
-          nuevoEstado = 'CONFIRMADO';
-          break;
-
-        case 'declined':
-          nuevoEstado = 'CANCELADO';
-          break;
-
-        case 'tentative':
-        case 'needsAction':
-          // No modificamos el estado actual.
-          return existente;
-
-        default:
-          throw new BookingError(
-            `Estado de respuesta de Google Calendar no reconocido: ${responseStatusNormalizado}.`,
-          );
-      }
-
-      const actualizado =
-        await turnoRepository.updateEstadoByCalendarEventId(
+    const actualizado =
+      await turnoRepository
+        .updateEstadoByCalendarEventId(
           eventIdNormalizado,
           nuevoEstado,
         );
 
-      if (!actualizado) {
-        throw new BookingError(
-          'No fue posible actualizar el turno desde Google Calendar.',
-          500,
-        );
-      }
+    if (!actualizado) {
+      throw new BookingError(
+        'No fue posible actualizar el turno desde Google Calendar.',
+        500,
+      );
+    }
 
-      return actualizado;
-    },
+    return actualizado;
+  },
+
+  // =====================================================
+  // ACTUALIZAR ESTADO - ADMIN
+  // =====================================================
+
   async updateEstado(
     id: number,
+    idOrganizacion: number,
     estado: TurnoRow['estado'],
   ): Promise<TurnoRow> {
     const existente =
-      await turnoRepository.findDetailById(id);
+      await turnoRepository
+        .findDetailById(
+          id,
+          idOrganizacion,
+        );
 
     if (!existente) {
       throw new BookingError(
@@ -740,10 +1035,12 @@ export const turnoService = {
     }
 
     const actualizado =
-      await turnoRepository.updateEstado(
-        id,
-        estado,
-      );
+      await turnoRepository
+        .updateEstado(
+          id,
+          idOrganizacion,
+          estado,
+        );
 
     if (!actualizado) {
       throw new BookingError(

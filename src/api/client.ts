@@ -20,6 +20,7 @@ import { APP_CONFIG } from '@/config/app';
 import { auth } from './auth';
 import { computeAvailableSlots } from './availability';
 import type { AuthUser } from './auth';
+
 import {
   mockBloqueos,
   mockClientes,
@@ -46,37 +47,118 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
+function getTenantSlug(): string | null {
+  const parts = window.location.pathname
+    .split('/')
+    .filter(Boolean);
 
-async function realFetch<T>(path: string, init?: RequestInit, requireAuth = true): Promise<T> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (init?.headers) Object.assign(headers, init.headers);
-  if (requireAuth) {
-    const token = auth.getToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+  return parts[0] ?? null;
+}
+async function realFetch<T>(
+  path: string,
+  init?: RequestInit,
+  requireAuth = true,
+): Promise<T> {
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (init?.headers) {
+    Object.assign(headers, init.headers);
   }
+
+  // -----------------------------------------
+  // TENANT
+  // -----------------------------------------
+  const tenantSlug = getTenantSlug();
+
+  if (tenantSlug) {
+    headers['X-Tenant-Slug'] = tenantSlug;
+  }
+
+  // -----------------------------------------
+  // TOKEN KEYCLOAK
+  // -----------------------------------------
+  if (requireAuth) {
+    const token = await auth.getValidToken();
+
+    if (!token) {
+      auth.clear();
+
+      throw new ApiError(
+        'No se pudo obtener una sesión válida.',
+        401,
+      );
+    }
+
+    headers['Authorization'] =
+      `Bearer ${token}`;
+  }
+
   let res: Response;
+
   try {
-    res = await fetch(`${API_URL}${path}`, { ...init, headers });
+
+    res = await fetch(
+      `${API_URL}${path}`,
+      {
+        ...init,
+        headers,
+      },
+    );
+
   } catch {
+
     throw new ApiError(
       'No se pudo conectar con el servidor. Verificá que el backend esté en ejecución.',
     );
   }
+
+
+  // -----------------------------------------
+  // SESIÓN VENCIDA
+  // -----------------------------------------
   if (res.status === 401 && requireAuth) {
+
     auth.clear();
-    window.location.href = '/login';
-    throw new ApiError('Sesión expirada. Iniciá sesión nuevamente.');
+
+    throw new ApiError(
+      'Sesión expirada. Iniciá sesión nuevamente.',
+      401,
+    );
   }
+
+
+  // -----------------------------------------
+  // OTROS ERRORES
+  // -----------------------------------------
   if (!res.ok) {
-    let msg = `Error ${res.status}`;
+
+    let msg =
+      `Error ${res.status}`;
+
     try {
-      const body = await res.json();
-      msg = body.error ?? body.message ?? msg;
+
+      const body =
+        await res.json();
+
+      msg =
+        body.error ??
+        body.message ??
+        msg;
+
     } catch {
       // ignore parse error
     }
-    throw new ApiError(msg, res.status);
+
+    throw new ApiError(
+      msg,
+      res.status,
+    );
   }
+
+
   return (await res.json()) as T;
 }
 
@@ -95,9 +177,21 @@ export const api = {
 
   // Servicios
   async getServicios(): Promise<Servicio[]> {
-    if (MODE === 'mock') return [...mockServicios];
-    return publicFetch<Servicio[]>(`/public/servicios/activos`);
-  },
+  if (MODE === 'mock') return [...mockServicios];
+
+  const slug = getTenantSlug();
+
+  if (!slug) {
+    throw new ApiError(
+      'No se pudo identificar la organización.',
+      400,
+    );
+  }
+
+  return publicFetch<Servicio[]>(
+    `/public/organizaciones/${slug}/servicios`,
+  );
+},
   async getServiciosAdmin(): Promise<Servicio[]> {
     if (MODE === 'mock') return [...mockServicios];
 
@@ -134,9 +228,21 @@ export const api = {
 
   // Profesionales
   async getProfesionales(): Promise<Profesional[]> {
-    if (MODE === 'mock') return [...mockProfesionales];
-    return publicFetch<Profesional[]>('/public/profesionales/activos');
-  },
+  if (MODE === 'mock') return [...mockProfesionales];
+
+  const slug = getTenantSlug();
+
+  if (!slug) {
+    throw new ApiError(
+      'No se pudo identificar la organización.',
+      400,
+    );
+  }
+
+  return publicFetch<Profesional[]>(
+    `/public/organizaciones/${slug}/profesionales`,
+  );
+},
   async createProfesional(data: Omit<Profesional, 'id_profesional' | 'id_organizacion'>): Promise<Profesional> {
     if (MODE === 'mock') {
       const id = Math.max(0, ...mockProfesionales.map((p) => p.id_profesional)) + 1;
