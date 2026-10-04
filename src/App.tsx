@@ -55,14 +55,13 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* Inicio temporal */}
-        <Route
+       <Route
           path="/"
           element={
-            <Navigate
-              to="/peluqueria-demo/reservar"
-              replace
-            />
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <h1>ClickTurno</h1>
+              <p>Ingresá utilizando el enlace de tu organización.</p>
+            </div>
           }
         />
 
@@ -187,7 +186,7 @@ function App() {
           path="*"
           element={
             <Navigate
-              to="/peluqueria-demo/reservar"
+              to="/"
               replace
             />
           }
