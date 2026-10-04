@@ -48,7 +48,7 @@ const KEYCLOAK_URL =
   process.env.KEYCLOAK_URL ?? 'http://localhost:8081';
 
 const KEYCLOAK_REALM =
-  process.env.KEYCLOAK_REALM ?? 'clickturno';
+  process.env.KEYCLOAK_REALM ?? 'tuturno';
 
 const KEYCLOAK_ISSUER =
   `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`;
