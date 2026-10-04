@@ -1,0 +1,3 @@
+FROM quay.io/keycloak/keycloak:26.7.4
+
+COPY keycloak/themes/clickturno /opt/keycloak/themes/clickturno
