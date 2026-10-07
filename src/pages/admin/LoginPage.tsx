@@ -15,7 +15,6 @@ export function LoginPage() {
       redirectUri: `${window.location.origin}/${slug}/admin`,
     });
   }
-
   const reservarUrl = slug
     ? `/${slug}/reservar`
     : '/';
