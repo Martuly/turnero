@@ -29,6 +29,10 @@ const OrganizacionContext =
     error: null,
   });
 
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  'http://localhost:4000/api';
+
 export function OrganizacionProvider({
   children,
 }: {
@@ -60,10 +64,9 @@ export function OrganizacionProvider({
         setLoading(true);
         setError(null);
 
-        const response =
-          await fetch(
-            `http://localhost:4000/api/public/organizaciones/${slug}`,
-          );
+        const response = await fetch(
+          `${API_URL}/public/organizaciones/${slug}`,
+        );
 
         if (!response.ok) {
           throw new Error(
@@ -76,6 +79,8 @@ export function OrganizacionProvider({
 
         setOrganizacion(data);
       } catch (err) {
+        setOrganizacion(null);
+
         setError(
           err instanceof Error
             ? err.message
