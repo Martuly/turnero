@@ -367,65 +367,70 @@ export const turnoRepository = {
   // WHATSAPP
   // =====================================================
 
-  async findParaRecordatorioWhatsapp(
-    horasAntes = 24,
-  ): Promise<TurnoDetalleRow[]> {
-    return query<TurnoDetalleRow>(
-      `SELECT
-         t.*,
+  
+async findParaRecordatorioWhatsapp(
+  horasAntes = 24,
+): Promise<TurnoDetalleRow[]> {
+  return query<TurnoDetalleRow>(
+    `SELECT
+       t.*,
 
-         c.nombre AS cliente_nombre,
-         c.apellido AS cliente_apellido,
-         c.email AS cliente_email,
-         c.telefono AS cliente_telefono,
+       c.nombre AS cliente_nombre,
+       c.apellido AS cliente_apellido,
+       c.email AS cliente_email,
+       c.telefono AS cliente_telefono,
 
-         p.nombre AS profesional_nombre,
-         p.apellido AS profesional_apellido,
+       p.nombre AS profesional_nombre,
+       p.apellido AS profesional_apellido,
 
-         s.nombre AS servicio_nombre,
-         s.duracion_minutos AS servicio_duracion_minutos,
-         s.precio AS servicio_precio
+       s.nombre AS servicio_nombre,
+       s.duracion_minutos AS servicio_duracion_minutos,
+       s.precio AS servicio_precio
 
-       FROM turno t
+     FROM turno t
 
-       JOIN cliente c
-         ON c.id_cliente = t.id_cliente
-        AND c.id_organizacion = t.id_organizacion
+     JOIN cliente c
+       ON c.id_cliente = t.id_cliente
+      AND c.id_organizacion = t.id_organizacion
 
-       JOIN profesional p
-         ON p.id_profesional = t.id_profesional
-        AND p.id_organizacion = t.id_organizacion
+     JOIN profesional p
+       ON p.id_profesional = t.id_profesional
+      AND p.id_organizacion = t.id_organizacion
 
-       JOIN servicio s
-         ON s.id_servicio = t.id_servicio
-        AND s.id_organizacion = t.id_organizacion
+     JOIN servicio s
+       ON s.id_servicio = t.id_servicio
+      AND s.id_organizacion = t.id_organizacion
 
-       WHERE t.estado IN (
-         'PENDIENTE',
-         'CONFIRMADO'
-       )
-         AND t.recordatorio_whatsapp_enviado = false
-         AND c.telefono IS NOT NULL
-         AND (t.fecha + t.hora_inicio)
-           BETWEEN
-             (
-               NOW()
-               + ($1 * INTERVAL '1 hour')
-               - INTERVAL '30 minutes'
-             )
-           AND
-             (
-               NOW()
-               + ($1 * INTERVAL '1 hour')
-               + INTERVAL '30 minutes'
-             )
+     WHERE t.estado IN (
+       'PENDIENTE',
+       'CONFIRMADO'
+     )
 
-       ORDER BY
-         t.fecha,
-         t.hora_inicio`,
-      [horasAntes],
-    );
-  },
+       -- No enviar recordatorios duplicados
+       AND t.recordatorio_whatsapp_enviado IS NOT TRUE
+
+       -- El cliente debe tener teléfono
+       AND NULLIF(TRIM(c.telefono), '') IS NOT NULL
+
+       -- El turno todavía no comenzó
+       AND (
+         (t.fecha + t.hora_inicio)
+           AT TIME ZONE 'America/Argentina/Buenos_Aires'
+       ) > NOW()
+
+       -- El turno está dentro de las próximas 24 horas
+       AND (
+         (t.fecha + t.hora_inicio)
+           AT TIME ZONE 'America/Argentina/Buenos_Aires'
+       ) <= NOW() + ($1 * INTERVAL '1 hour')
+
+     ORDER BY
+       t.fecha,
+       t.hora_inicio`,
+    [horasAntes],
+  );
+},
+
 
   async marcarRecordatorioWhatsappEnviado(
     idTurno: number,
