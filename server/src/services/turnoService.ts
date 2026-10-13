@@ -715,6 +715,101 @@ export const turnoService = {
     return detalle;
   },
 
+  
+  // =====================================================
+  // RESPUESTA WHATSAPP - INTEGRACION N8N
+  // =====================================================
+
+  
+  // =====================================================
+  // RESPUESTA WHATSAPP - INTEGRACION N8N
+  // =====================================================
+
+  async procesarRespuestaWhatsapp(
+    telefono: string,
+    respuesta: '1' | '2',
+  ) {
+    if (!telefono?.trim()) {
+      throw new BookingError(
+        'El teléfono es obligatorio.',
+        400,
+      );
+    }
+
+    if (respuesta !== '1' && respuesta !== '2') {
+      throw new BookingError(
+        'Respuesta inválida. Utilizá 1 o 2.',
+        400,
+      );
+    }
+
+    // Buscar recordatorios recientes entre organizaciones.
+    const candidatos =
+      await turnoRepository.findCandidatosRespuestaWhatsapp(
+        telefono,
+      );
+
+    if (candidatos.length === 0) {
+      throw new BookingError(
+        'No se encontró un recordatorio pendiente para este teléfono.',
+        404,
+      );
+    }
+
+    // Nunca elegir automáticamente entre varias reservas.
+    if (candidatos.length > 1) {
+      throw new BookingError(
+        'Hay varias reservas asociadas a este teléfono. No se modificó ningún turno.',
+        409,
+      );
+    }
+
+    const turno = candidatos[0];
+
+    // La organización se obtiene de la reserva encontrada.
+    const idOrganizacion = turno.id_organizacion;
+
+    if (!Number.isInteger(idOrganizacion) || idOrganizacion <= 0) {
+      throw new BookingError(
+        'La organización del turno no es válida.',
+        409,
+      );
+    }
+
+    if (!turno.token_gestion) {
+      throw new BookingError(
+        'El turno no tiene un token de gestión válido.',
+        409,
+      );
+    }
+
+    const tokenGestion = turno.token_gestion;
+
+    if (respuesta === '1') {
+      const actualizado = await this.confirmarTurno(
+        tokenGestion,
+      );
+
+      return {
+        accion: 'CONFIRMAR',
+        id_organizacion: idOrganizacion,
+        turno: actualizado,
+      };
+    }
+
+    const actualizado = await this.cancelarTurno(
+      tokenGestion,
+      'Cancelado por WhatsApp',
+    );
+
+    return {
+      accion: 'CANCELAR',
+      id_organizacion: idOrganizacion,
+      turno: actualizado,
+    };
+  },
+
+
   // =====================================================
   // REPROGRAMAR - ACCESO PÚBLICO POR TOKEN
   // =====================================================

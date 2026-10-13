@@ -537,6 +537,46 @@ export const turnoController = {
 
 
   // =====================================================
+  // RESPUESTAS WHATSAPP - INTEGRACION N8N
+  // =====================================================
+
+  
+  // =====================================================
+  // RESPUESTAS WHATSAPP - INTEGRACION N8N
+  // =====================================================
+
+  respuestaWhatsappN8n: asyncHandler(
+    async (req: Request, res: Response) => {
+      const claveRecibida = req.header('x-n8n-key');
+      const claveEsperada = process.env.N8N_INTEGRATION_KEY;
+
+      if (!claveEsperada) {
+        throw new HttpError(
+          'Integración n8n no configurada.',
+          500,
+        );
+      }
+
+      if (!claveRecibida || claveRecibida !== claveEsperada) {
+        throw new HttpError(
+          'Integración no autorizada.',
+          401,
+        );
+      }
+
+      const { telefono, respuesta } = req.body ?? {};
+
+      const resultado = await turnoService.procesarRespuestaWhatsapp(
+        String(telefono ?? ''),
+        String(respuesta ?? '') as '1' | '2',
+      );
+
+      res.json(resultado);
+    },
+  ),
+
+
+  // =====================================================
   // RECORDATORIOS WHATSAPP
   // =====================================================
 

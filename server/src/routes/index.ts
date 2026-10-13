@@ -154,7 +154,14 @@ router.patch(
   '/turnos/:id/recordatorio-whatsapp',
   turnoController.marcarRecordatorioWhatsapp,
 );
+// =====================================================
+ // RESPUESTAS WHATSAPP - INTEGRACION N8N
+ // =====================================================
 
+router.post(
+  '/integraciones/n8n/whatsapp/respuesta',
+  turnoController.respuestaWhatsappN8n,
+);
 
 // =====================================================
 // INTEGRACION N8N - API KEY
