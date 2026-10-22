@@ -12,8 +12,10 @@ type OrganizacionActual = {
   idOrganizacion: number;
   codigo: string;
   nombre: string;
+  nombrePublico?: string | null;
   slug: string;
   timezone: string;
+  logoUrl?: string | null;
 };
 
 type OrganizacionContextType = {

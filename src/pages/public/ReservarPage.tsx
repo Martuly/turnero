@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useOrganizacion } from '@/context/OrganizacionContext';
 
 import {
   Link,
@@ -58,6 +59,7 @@ import { es } from 'date-fns/locale';
 type Step = 1 | 2 | 3 | 4;
 
 export function ReservarPage() {
+  const { organizacion } = useOrganizacion();
   const navigate = useNavigate();
 
   const { slug } = useParams<{
@@ -364,30 +366,49 @@ export function ReservarPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-slate-900 flex items-center justify-center">
-              <CalendarDays className="h-5 w-5 text-white" />
-            </div>
-
-            <span className="text-lg font-semibold text-slate-900">
-              {APP_CONFIG.name}
-            </span>
-          </div>
-
-          <Link
-            to={
-              slug
-                ? `/${slug}/admin`
-                : '/'
-            }
-            className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
-          >
-            Panel administrativo
-          </Link>
+     <header className="bg-white border-b border-slate-200">
+  <div className="max-w-3xl mx-auto px-4 py-5 flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      {organizacion?.logoUrl ? (
+        <img
+          src={organizacion.logoUrl}
+          alt={
+            organizacion.nombrePublico ??
+            organizacion.nombre
+          }
+          className="h-14 w-14 rounded-xl object-cover border border-slate-200 shadow-sm"
+        />
+      ) : (
+        <div className="h-12 w-12 rounded-xl bg-slate-900 flex items-center justify-center">
+          <CalendarDays className="h-6 w-6 text-white" />
         </div>
-      </header>
+      )}
+
+      <div>
+        <p className="text-lg font-semibold text-slate-900">
+          {organizacion?.nombrePublico ??
+            organizacion?.nombre ??
+            APP_CONFIG.name}
+        </p>
+
+        <p className="text-xs text-slate-500">
+          Reservá tu turno online
+        </p>
+      </div>
+    </div>
+
+    <Link
+      to={
+        slug
+          ? `/${slug}/admin`
+          : '/'
+      }
+      className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
+    >
+      Panel administrativo
+    </Link>
+  </div>
+</header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
         {/* Stepper */}
