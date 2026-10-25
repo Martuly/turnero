@@ -1,3 +1,6 @@
 FROM quay.io/keycloak/keycloak:26.7.4
 
 COPY keycloak/themes/clickturno /opt/keycloak/themes/clickturno
+
+# Tema de Impulso Forestal
+COPY keycloak/themes/impulso-forestal /opt/keycloak/themes/impulso-forestal

@@ -1,0 +1,428 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: light;
+  --if-teal-900: #072222;
+  --if-teal-800: #0b2f30;
+  --if-teal-700: #0f3d3e;
+  --if-teal-200: #aee5cd;
+  --if-amber-400: #fbbf24;
+  --if-steel-50: #f7f8f8;
+  --if-steel-200: #dde1e3;
+  --if-steel-500: #6b747b;
+  --if-steel-800: #2b3034;
+}
+
+html,
+body#keycloak-bg {
+  width: 100%;
+  min-width: 0;
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--if-steel-50);
+  color: var(--if-steel-800);
+  font-family: Inter, sans-serif;
+}
+
+#keycloak-bg .pf-v5-c-login,
+#keycloak-bg .pf-v5-c-login__container {
+  width: 100%;
+  max-width: none;
+  min-height: 100dvh;
+}
+
+#keycloak-bg .pf-v5-c-login {
+  display: block;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  background: var(--if-steel-50);
+}
+
+#keycloak-bg .pf-v5-c-login__container {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto;
+  grid-template-areas: "header main";
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  background: var(--if-steel-50);
+}
+
+#kc-header {
+  grid-area: header;
+  display: flex;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  flex-direction: column;
+  margin: 0;
+  padding: clamp(2rem, 6vw, 5rem);
+  color: #fff;
+  background-color: var(--if-teal-700);
+  background-image: linear-gradient(135deg, transparent 25%, rgb(255 255 255 / 7%) 25%, rgb(255 255 255 / 7%) 50%, transparent 50%, transparent 75%, rgb(255 255 255 / 7%) 75%);
+  background-size: 40px 40px;
+}
+
+#kc-header-wrapper {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  color: #fff;
+  text-align: left;
+  white-space: normal;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.if-brand {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.85rem;
+  min-width: 0;
+}
+
+.if-brand::before {
+  display: block;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: var(--if-teal-800) url('../img/impulso-mark.svg') center / 2rem 2rem no-repeat;
+  content: '';
+}
+
+.if-brand-name {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  color: #fff;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.if-brand-subtitle {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0;
+  align-self: start;
+  color: var(--if-teal-200);
+  font-family: Inter, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.if-promo {
+  display: flex;
+  max-width: 31rem;
+  flex-direction: column;
+  gap: 1rem;
+  margin-block: auto;
+}
+
+.if-promo-title {
+  margin: 0;
+  color: #fff;
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.if-promo-copy {
+  margin: 0;
+  color: #e5f4ef;
+  font-size: 1.125rem;
+  line-height: 1.65;
+}
+
+.if-feature-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.25rem 0 0;
+  list-style: none;
+}
+
+.if-feature-pills li {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid #0f7a5a;
+  border-radius: 999px;
+  background: rgb(11 47 48 / 50%);
+  color: #d6f2e6;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.if-brand-footer {
+  margin: 0;
+  color: var(--if-teal-200);
+  font-size: 0.75rem;
+}
+
+.if-promo,
+.if-brand,
+.if-brand-footer {
+  min-width: 0;
+}
+
+#keycloak-bg .pf-v5-c-login__main {
+  grid-area: main;
+  display: flex;
+  box-sizing: border-box;
+  width: min(calc(100% - 3rem), 28rem);
+  max-width: 28rem;
+  min-height: 0;
+  align-self: center;
+  justify-self: center;
+  flex-direction: column;
+  justify-content: center;
+  margin: 2rem;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  border: 1px solid var(--if-steel-200);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 4px 12px -2px rgb(16 29 32 / 12%), 0 2px 6px -1px rgb(16 29 32 / 8%);
+}
+
+#keycloak-bg .pf-v5-c-login__main-header,
+#keycloak-bg .pf-v5-c-login__main-body,
+#keycloak-bg .pf-v5-c-login__main-footer {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+#keycloak-bg .pf-v5-c-login__main-header {
+  border-top: 0 !important;
+  padding-top: 0;
+}
+
+#kc-page-title {
+  color: var(--if-steel-800);
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+#kc-form-wrapper,
+#kc-info-wrapper {
+  color: var(--if-steel-500);
+}
+
+.if-login-description {
+  margin: 0 0 1.25rem;
+  color: var(--if-steel-500);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+#kc-form-login {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#kc-form,
+#kc-form-wrapper,
+#kc-form-login .pf-v5-c-form__group {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#kc-form-login .pf-v5-c-form-control,
+#kc-form-login .pf-v5-c-form-control input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+#kc-form-login .pf-v5-c-input-group {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+#kc-form-login .pf-v5-c-input-group__item.pf-m-fill {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+#kc-form-login .pf-v5-c-input-group__item:not(.pf-m-fill) {
+  flex: 0 0 auto;
+}
+
+#kc-form-login [data-password-toggle] {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+#kc-form-login .pf-v5-c-form__label,
+#kc-form-login label {
+  color: var(--if-steel-800);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+#kc-form-login .pf-v5-c-form-control,
+#kc-form-login input[type='text'],
+#kc-form-login input[type='email'],
+#kc-form-login input[type='password'] {
+  min-height: 2.75rem;
+  border-color: var(--if-steel-200);
+  border-radius: 0.5rem;
+  background-color: #fff;
+  color: var(--if-steel-800);
+  font: inherit;
+}
+
+#kc-form-login .pf-v5-c-form-control:focus,
+#kc-form-login input:focus {
+  border-color: var(--if-teal-700);
+  box-shadow: 0 0 0 2px rgb(15 61 62 / 18%);
+}
+
+#kc-form-login .pf-v5-c-button.pf-m-primary {
+  min-height: 3.25rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: var(--if-teal-700);
+  color: #fff;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+}
+
+#kc-form-login .pf-v5-c-button.pf-m-primary:hover {
+  background: var(--if-teal-800);
+}
+
+#kc-form-login a,
+#kc-info-wrapper a {
+  color: var(--if-teal-700);
+  font-weight: 500;
+}
+
+#kc-form-login a:hover,
+#kc-info-wrapper a:hover {
+  color: var(--if-teal-900);
+}
+
+#kc-form-login .pf-v5-c-alert,
+#kc-form-login .kc-feedback-text {
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 1023px) {
+  #keycloak-bg .pf-v5-c-login__container {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "header"
+      "main";
+  }
+
+  #kc-header {
+    grid-area: header;
+    min-height: auto;
+    padding: 1.25rem 1.5rem;
+    background-size: 32px 32px;
+  }
+
+  #kc-header-wrapper {
+    min-height: 0;
+    gap: 0;
+  }
+
+  .if-brand {
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+  }
+
+  .if-brand::before {
+    width: 2.75rem;
+    height: 2.75rem;
+    background-size: 1.8rem 1.8rem;
+  }
+
+  .if-brand-name {
+    font-size: 1.4rem;
+  }
+
+  .if-promo,
+  .if-brand-footer {
+    display: none;
+  }
+
+  #keycloak-bg .pf-v5-c-login__main {
+    grid-area: main;
+    min-height: auto;
+    align-items: center;
+    justify-self: stretch;
+    width: auto;
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  #kc-page-title {
+    font-size: 1.75rem;
+  }
+}
+
+
+/* Ajuste del contenedor principal de Keycloak */
+@media (min-width: 1024px) {
+  html,
+  body#keycloak-bg {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #keycloak-bg .pf-v5-c-login {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #keycloak-bg .pf-v5-c-login__container {
+   grid-template-rows: auto;
+    margin: 0 !important;
+    padding: 0 !important;
+    align-content: start;
+  }
+
+  #keycloak-bg #kc-header {
+    margin: 0 !important;
+    align-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
