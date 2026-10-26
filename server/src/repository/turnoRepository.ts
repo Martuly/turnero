@@ -372,65 +372,179 @@ async findParaRecordatorioWhatsapp(
   horasAntes = 24,
 ): Promise<TurnoDetalleRow[]> {
   return query<TurnoDetalleRow>(
-    `SELECT
-       t.*,
+    `
+    WITH candidatos AS (
+      SELECT
+        t.*,
 
-       c.nombre AS cliente_nombre,
-       c.apellido AS cliente_apellido,
-       c.email AS cliente_email,
-       c.telefono AS cliente_telefono,
+        c.nombre AS cliente_nombre,
+        c.apellido AS cliente_apellido,
+        c.email AS cliente_email,
+        c.telefono AS cliente_telefono,
 
-       p.nombre AS profesional_nombre,
-       p.apellido AS profesional_apellido,
+        p.nombre AS profesional_nombre,
+        p.apellido AS profesional_apellido,
 
-       s.nombre AS servicio_nombre,
-       s.duracion_minutos AS servicio_duracion_minutos,
-       s.precio AS servicio_precio
+        s.nombre AS servicio_nombre,
+        s.duracion_minutos AS servicio_duracion_minutos,
+        s.precio AS servicio_precio,
 
-     FROM turno t
+        ROW_NUMBER() OVER (
+          PARTITION BY
+            CASE
+              WHEN regexp_replace(
+                c.telefono,
+                '[^0-9]',
+                '',
+                'g'
+              ) LIKE '0%'
+              THEN
+                '549' || SUBSTRING(
+                  regexp_replace(
+                    c.telefono,
+                    '[^0-9]',
+                    '',
+                    'g'
+                  )
+                  FROM 2
+                )
+              ELSE
+                regexp_replace(
+                  c.telefono,
+                  '[^0-9]',
+                  '',
+                  'g'
+                )
+            END
+          ORDER BY
+            t.fecha,
+            t.hora_inicio,
+            t.id_turno
+        ) AS rn
 
-     JOIN cliente c
-       ON c.id_cliente = t.id_cliente
-      AND c.id_organizacion = t.id_organizacion
+      FROM turno t
 
-     JOIN profesional p
-       ON p.id_profesional = t.id_profesional
-      AND p.id_organizacion = t.id_organizacion
+      JOIN cliente c
+        ON c.id_cliente = t.id_cliente
+       AND c.id_organizacion = t.id_organizacion
 
-     JOIN servicio s
-       ON s.id_servicio = t.id_servicio
-      AND s.id_organizacion = t.id_organizacion
+      JOIN profesional p
+        ON p.id_profesional = t.id_profesional
+       AND p.id_organizacion = t.id_organizacion
 
-     WHERE t.estado IN (
-       'PENDIENTE',
-       'CONFIRMADO'
-     )
+      JOIN servicio s
+        ON s.id_servicio = t.id_servicio
+       AND s.id_organizacion = t.id_organizacion
 
-       -- No enviar recordatorios duplicados
-       AND t.recordatorio_whatsapp_enviado IS NOT TRUE
+      WHERE t.estado IN (
+        'PENDIENTE',
+        'CONFIRMADO'
+      )
 
-       -- El cliente debe tener teléfono
-       AND NULLIF(TRIM(c.telefono), '') IS NOT NULL
+        -- No enviar el mismo recordatorio dos veces
+        AND t.recordatorio_whatsapp_enviado IS NOT TRUE
 
-       -- El turno todavía no comenzó
-       AND (
-         (t.fecha + t.hora_inicio)
-           AT TIME ZONE 'America/Argentina/Buenos_Aires'
-       ) > NOW()
+        -- Debe existir teléfono
+        AND NULLIF(TRIM(c.telefono), '') IS NOT NULL
 
-       -- El turno está dentro de las próximas 24 horas
-       AND (
-         (t.fecha + t.hora_inicio)
-           AT TIME ZONE 'America/Argentina/Buenos_Aires'
-       ) <= NOW() + ($1 * INTERVAL '1 hour')
+        -- El turno todavía no comenzó
+        AND (
+          (t.fecha + t.hora_inicio)
+            AT TIME ZONE 'America/Argentina/Buenos_Aires'
+        ) > NOW()
 
-     ORDER BY
-       t.fecha,
-       t.hora_inicio`,
+        -- Está dentro de la ventana de recordatorio
+        AND (
+          (t.fecha + t.hora_inicio)
+            AT TIME ZONE 'America/Argentina/Buenos_Aires'
+        ) <= NOW() + ($1 * INTERVAL '1 hour')
+
+        -- Ese teléfono no debe haber recibido otro
+        -- recordatorio durante los últimos 30 minutos
+        AND NOT EXISTS (
+          SELECT 1
+
+          FROM turno t2
+
+          JOIN cliente c2
+            ON c2.id_cliente = t2.id_cliente
+           AND c2.id_organizacion = t2.id_organizacion
+
+          WHERE
+            t2.recordatorio_whatsapp_enviado = true
+
+            AND t2.fecha_recordatorio_whatsapp
+              >= NOW() - INTERVAL '30 minutes'
+
+            AND (
+              CASE
+                WHEN regexp_replace(
+                  c2.telefono,
+                  '[^0-9]',
+                  '',
+                  'g'
+                ) LIKE '0%'
+                THEN
+                  '549' || SUBSTRING(
+                    regexp_replace(
+                      c2.telefono,
+                      '[^0-9]',
+                      '',
+                      'g'
+                    )
+                    FROM 2
+                  )
+                ELSE
+                  regexp_replace(
+                    c2.telefono,
+                    '[^0-9]',
+                    '',
+                    'g'
+                  )
+              END
+            )
+            =
+            (
+              CASE
+                WHEN regexp_replace(
+                  c.telefono,
+                  '[^0-9]',
+                  '',
+                  'g'
+                ) LIKE '0%'
+                THEN
+                  '549' || SUBSTRING(
+                    regexp_replace(
+                      c.telefono,
+                      '[^0-9]',
+                      '',
+                      'g'
+                    )
+                    FROM 2
+                  )
+                ELSE
+                  regexp_replace(
+                    c.telefono,
+                    '[^0-9]',
+                    '',
+                    'g'
+                  )
+              END
+            )
+        )
+    )
+
+    SELECT *
+    FROM candidatos
+    WHERE rn = 1
+
+    ORDER BY
+      fecha,
+      hora_inicio
+    `,
     [horasAntes],
   );
 },
-
 
   async marcarRecordatorioWhatsappEnviado(
     idTurno: number,
