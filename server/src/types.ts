@@ -53,7 +53,7 @@ export interface ClienteRow {
   id_cliente: number;
   nombre: string;
   apellido: string;
-  email: string;
+  email: string | null;
   telefono: string | null;
   created_at: string;
 }
@@ -113,7 +113,7 @@ export interface CrearTurnoPayload {
   cliente: {
     nombre: string;
     apellido: string;
-    email: string;
+    email?: string | null;
     telefono: string;
   };
 }

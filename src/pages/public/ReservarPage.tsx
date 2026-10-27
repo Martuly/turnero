@@ -810,7 +810,7 @@ export function ReservarPage() {
               />
 
               <Input
-                label="Email"
+                label="Email (opcional)"
                 name="email"
                 type="email"
                 value={

@@ -400,25 +400,55 @@ export const turnoService = {
         }
 
         // Buscar cliente SOLO dentro de la organización.
-        const clienteResult =
-          await client.query(
-            `
-              SELECT *
-              FROM cliente
-              WHERE id_organizacion = $1
-                AND LOWER(email) = LOWER($2)
-              LIMIT 1
-            `,
-            [
-              idOrganizacion,
-              payload.cliente.email,
-            ],
-          );
+        // Normalizar datos de contacto
+const emailNormalizado =
+  payload.cliente.email
+    ?.trim() || null;
 
-        let cliente =
-          clienteResult.rows[0];
+const telefonoNormalizado =
+  payload.cliente.telefono
+    ?.trim() || null;
 
-        // Crear cliente si todavía no existe en esta organización.
+// Buscar cliente SOLO dentro de la organización.
+// Si hay email, buscar por email.
+// Si no hay email, buscar por teléfono.
+const clienteResult =
+  emailNormalizado
+    ? await client.query(
+        `
+          SELECT *
+          FROM cliente
+          WHERE id_organizacion = $1
+            AND LOWER(email) = LOWER($2)
+          LIMIT 1
+        `,
+        [
+          idOrganizacion,
+          emailNormalizado,
+        ],
+      )
+    : await client.query(
+        `
+          SELECT *
+          FROM cliente
+          WHERE id_organizacion = $1
+            AND telefono = $2
+          LIMIT 1
+        `,
+        [
+          idOrganizacion,
+          telefonoNormalizado,
+        ],
+      );
+
+let cliente =
+  clienteResult.rows[0];
+
+
+
+
+
+          // Crear cliente si todavía no existe en esta organización.
         if (!cliente) {
           const nuevoClienteResult =
             await client.query(
@@ -443,9 +473,8 @@ export const turnoService = {
                 idOrganizacion,
                 payload.cliente.nombre,
                 payload.cliente.apellido,
-                payload.cliente.email,
-                payload.cliente.telefono
-                  ?.trim() || null,
+                emailNormalizado,
+                telefonoNormalizado,
               ],
             );
 
