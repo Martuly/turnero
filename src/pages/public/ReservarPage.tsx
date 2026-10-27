@@ -243,17 +243,14 @@ export function ReservarPage() {
         'Ingresá tu apellido';
     }
 
-    if (!form.email.trim()) {
-      errs.email =
-        'Ingresá tu email';
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-        form.email,
-      )
-    ) {
-      errs.email =
-        'Email inválido';
-    }
+    if (
+  form.email.trim() &&
+  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    form.email,
+  )
+) {
+  errs.email = 'Email inválido';
+}
 
     if (!form.telefono.trim()) {
       errs.telefono =
